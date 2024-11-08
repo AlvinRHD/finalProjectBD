@@ -26,8 +26,6 @@ include '../config/db_config.php';
   <li><a href="../index.php">Home</a></li>
     <li><a href="products.php">Productos</a></li>
     <li><a href="categories.php">Categorias</a></li>
-    <li><a href="#opcion3">Opción 3</a></li>
-    <li><a href="#opcion4">Opción 4</a></li>
   </ul>
 </nav>
 <!-- Fin Menu lateral -->

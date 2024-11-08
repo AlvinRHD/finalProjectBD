@@ -26,12 +26,35 @@ if (isset($_GET['id'])) {
         $precio = $_POST['precio'];
         $cantidad_disponible = $_POST['cantidad'];
         $categoria_id = $_POST['categoria'];
+        $imagen = $_FILES['imagen'];
 
         // Validación básica
         if (!empty($nombre) && !empty($precio) && !empty($cantidad_disponible) && !empty($categoria_id)) {
-            $sql = "UPDATE Productos SET nombre = ?, descripcion = ?, precio = ?, cantidad_disponible = ?, categoria_id = ? WHERE producto_id = ?";
+            
+            // Manejo de la carga de la imagen si se ha subido una nueva
+            $imagen_nombre = $producto['imagen']; // Mantener la imagen actual si no se cambia
+            if (!empty($imagen['name'])) {
+                $target_dir = "../uploads/";
+                $target_file = $target_dir . basename($imagen["name"]);
+                $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+
+                // Verificar que el archivo sea una imagen
+                $allowed_types = ["jpg", "jpeg", "png", "gif"];
+                if (in_array($imageFileType, $allowed_types)) {
+                    if (move_uploaded_file($imagen["tmp_name"], $target_file)) {
+                        $imagen_nombre = basename($imagen["name"]); // Actualizar el nombre de la nueva imagen
+                    } else {
+                        echo "Error al subir la nueva imagen.";
+                    }
+                } else {
+                    echo "Formato de archivo no permitido. Solo JPG, JPEG, PNG y GIF.";
+                }
+            }
+
+            // Actualizar el producto en la base de datos, incluyendo la imagen si se cambió
+            $sql = "UPDATE Productos SET nombre = ?, descripcion = ?, precio = ?, cantidad_disponible = ?, categoria_id = ?, imagen = ? WHERE producto_id = ?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ssdiii", $nombre, $descripcion, $precio, $cantidad_disponible, $categoria_id, $producto_id);
+            $stmt->bind_param("ssdissi", $nombre, $descripcion, $precio, $cantidad_disponible, $categoria_id, $imagen_nombre, $producto_id);
 
             if ($stmt->execute()) {
                 echo "Producto actualizado exitosamente.";
@@ -56,13 +79,13 @@ if (isset($_GET['id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Producto</title>
-    <link rel="stylesheet" href="../css/productos.css"> <!-- Asegúrate de que esté aquí -->
+    <link rel="stylesheet" href="../css/productos.css">
 </head>
 <body>
 
     <h1>Editar Producto</h1>
     
-    <form action="edit_products.php?id=<?php echo $producto['producto_id']; ?>" method="POST" class="form-container">
+    <form action="edit_products.php?id=<?php echo $producto['producto_id']; ?>" method="POST" enctype="multipart/form-data" class="form-container">
         <label for="nombre">Nombre del Producto:</label>
         <input type="text" id="nombre" name="nombre" value="<?php echo $producto['nombre']; ?>" required>
 
@@ -88,6 +111,12 @@ if (isset($_GET['id'])) {
             }
             ?>
         </select>
+
+        <label for="imagen">Imagen del Producto (opcional):</label>
+        <input type="file" id="imagen" name="imagen" accept="image/*">
+        <?php if (!empty($producto['imagen'])): ?>
+            <p>Imagen actual: <img src="../uploads/<?php echo $producto['imagen']; ?>" alt="Imagen del producto" style="width: 100px;"></p>
+        <?php endif; ?>
 
         <button type="submit" class="btn-save">Actualizar Producto</button>
     </form>
